@@ -60,9 +60,19 @@ def download(url, server_fname, local_fname=None, progress_update_percentage=5):
                 p += progress_update_percentage
 
 
-def load_sample_images():
+def load_sample_images(read_dir=None, resize_shape=None):
     """Load sample images for image manipulation.
     Loads ``sloth``, ``sloth_closeup``, and ``cat and dog``.
+
+    Parameters
+    ----------
+    read_dir : None or string
+        If None, read in data from sklearn_theano's datasets/images path.
+        Otherwise, read a set of .jpg images from the specified path.
+
+    resize_shape : None or tuple, shape = [width, height]
+        If None, read in each image in its native size. If a tuple is passed,
+        resize all images to the shape given by resize_shape.
 
     Returns
     -------
@@ -72,35 +82,51 @@ def load_sample_images():
         names for the images, and 'DESCR'
         the full description of the dataset.
     """
-    module_path = os.path.join(os.path.dirname(__file__), "images")
-    with open(os.path.join(module_path, 'README.txt')) as f:
-        descr = f.read()
+    if read_dir is None:
+        module_path = os.path.join(os.path.dirname(__file__), "images")
+        with open(os.path.join(module_path, 'README.txt')) as f:
+            descr = f.read()
+    else:
+        module_path = os.path.join(read_dir)
+        descr = "Specially loaded dataset from %s" % module_path
     filenames = [os.path.join(module_path, filename)
                  for filename in os.listdir(module_path)
                  if filename.endswith(".jpg")]
     # Load image data for each image in the source folder.
-    images = [np.array(Image.open(filename, 'r')) for filename in filenames]
+    if resize_shape is None:
+        images = [np.array(Image.open(filename, 'r')) for filename in filenames]
+    else:
+        images = [np.array(Image.open(filename, 'r').resize(resize_shape))
+                  for filename in filenames]
 
     return Bunch(images=images,
                  filenames=filenames,
                  DESCR=descr)
 
 
-def load_sample_image(image_name):
+def load_sample_image(image_name, read_dir=None, resize_shape=None):
     """Load the numpy array of a single sample image
 
     Parameters
     -----------
-    image_name: {`sloth.jpg`, `sloth_closeup.jpg`, `cat_and_dog.jpg`}
+    image_name : {`sloth.jpg`, `sloth_closeup.jpg`, `cat_and_dog.jpg`}
         The name of the sample image loaded
+
+    read_dir : None or string
+        If None, read in data from sklearn_theano's datasets/images path.
+        Otherwise, read a .jpg image from the specified path.
+
+    resize_shape : None or tuple, shape = [width, height]
+        If None, read in the image in its native size. If a tuple is passed,
+        resize the selected image to the shape given by resize_shape.
 
     Returns
     -------
-    img: 3D array
+    img : 3D array
         The image as a numpy array: height x width x color
 
     """
-    images = load_sample_images()
+    images = load_sample_images(read_dir=read_dir, resize_shape=resize_shape)
     index = None
     for i, filename in enumerate(images.filenames):
         if filename.endswith(image_name):
